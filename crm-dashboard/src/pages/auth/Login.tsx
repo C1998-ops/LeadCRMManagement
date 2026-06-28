@@ -185,6 +185,9 @@ function Login() {
                     Create An Account
                   </Link>
                 </div>
+                <span className="font-light text-md w-full text-center">
+                  Demo application for technical assessment.
+                </span>
               </Form>
             )}
           </Formik>

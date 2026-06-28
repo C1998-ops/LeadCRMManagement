@@ -26,7 +26,7 @@ interface SidebarProps {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", path: "/dashboard" },
   { label: "Leads", path: "/leads", badge: 24 },
-  // { label: "Customers", path: "/customers" },
+  { label: "Customers", path: "/customers" },
 ];
 
 const SidebarFreeUser: React.FC<SidebarProps> = ({

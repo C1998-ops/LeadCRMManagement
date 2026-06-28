@@ -1,0 +1,84 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+      - production
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy-frontend:
+    name: Deploy Frontend to Amplify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Amplify
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.ORG_ID }}
+          vercel-project-id: ${{ secrets.PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./crm-dashboard
+
+  deploy-backend:
+    name: Deploy Backend to EC2
+    runs-on: ubuntu-latest
+    needs: deploy-frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd crm-backend
+          npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to EC2
+        run: |
+          # Add your EC2 deployment commands here
+          # Example: Using AWS CodeDeploy or SSH
+          echo "Deploying backend to EC2..."
+          
+          # Option 1: Using SSH
+          # mkdir -p ~/.ssh
+          # echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2_key.pem
+          # chmod 600 ~/.ssh/ec2_key.pem
+          # scp -i ~/.ssh/ec2_key.pem -r crm-backend/* ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }}:/home/app/
+          # ssh -i ~/.ssh/ec2_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }} 'cd /home/app && npm install && pm2 restart backend'
+          
+          # Option 2: Using AWS CodeDeploy
+          # aws deploy push --application-name ${{ secrets.CODEDEPLOY_APP }} --s3-location s3://${{ secrets.S3_BUCKET }}/backend.zip --source crm-backend/
+          # aws deploy create-deployment --application-name ${{ secrets.CODEDEPLOY_APP }} --deployment-group-name ${{ secrets.CODEDEPLOY_GROUP }} --s3-location bucket=${{ secrets.S3_BUCKET }},key=backend.zip,bundleType=zip
+
+  notify:
+    name: Notify deployment status
+    runs-on: ubuntu-latest
+    needs: [deploy-frontend, deploy-backend]
+    if: always()
+    steps:
+      - name: Send notification
+        run: |
+          if [ "${{ needs.deploy-frontend.result }}" == "success" ] && [ "${{ needs.deploy-backend.result }}" == "success" ]; then
+            echo "Deployment successful!"
+          else
+            echo "Deployment failed!"
+            exit 1
+          fi

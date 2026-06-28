@@ -27,7 +27,6 @@ export const publicRoutes: PublicRouteConfig[] = [
     element: <Register />,
   },
   { path: "/logout", element: <Logout /> },
-  { path: "/customers", element: <Customer /> },
 ];
 
 export const protectedRoutes: ProtectedRouteConfig[] = [
@@ -36,6 +35,14 @@ export const protectedRoutes: ProtectedRouteConfig[] = [
     element: (
       <DashboardLayout>
         <Dashboard />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/customers",
+    element: (
+      <DashboardLayout>
+        <Customer />
       </DashboardLayout>
     ),
   },
