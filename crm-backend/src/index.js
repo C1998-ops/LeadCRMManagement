@@ -1,0 +1,67 @@
+// src/index.js
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
+
+const authRoutes = require("./routes/auth");
+const leadsRoutes = require("./routes/leads");
+const customersRoutes = require("./routes/customers");
+const { errorHandler } = require("./middleware/errorHandler");
+
+// Run migrations on startup
+require("./db/migrate");
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// ── Global middleware ──────────────────────────────────────────────────────
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    credentials: true,
+  }),
+);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+
+// Rate limiting
+app.use(
+  "/api/auth",
+  rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 min
+    max: 20,
+    message: {
+      success: false,
+      message: "Too many requests, please try again later",
+    },
+  }),
+);
+
+// ── Routes ─────────────────────────────────────────────────────────────────
+app.get("/health", (req, res) =>
+  res.json({ status: "ok", timestamp: new Date() }),
+);
+
+app.use("/api/auth", authRoutes);
+app.use("/api/leads", leadsRoutes);
+app.use("/api/customers", customersRoutes);
+
+// 404
+app.use((req, res) =>
+  res.status(404).json({ success: false, message: "Route not found" }),
+);
+
+// Error handler (must be last)
+app.use(errorHandler);
+
+app.listen(PORT, () => {
+  console.log(
+    `\n🚀 Confident Group CRM API running on http://localhost:${PORT}`,
+  );
+  console.log(`   ENV: ${process.env.NODE_ENV || "development"}`);
+});
+
+module.exports = app;
