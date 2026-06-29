@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import logo from "../assets/confident-grp.png";
 import { HiMenu, HiX } from "react-icons/hi";
 import { useUserInfo } from "@/hooks/useUserInfo";
+import { clearAuthSession } from "@/utils/authState";
 
 interface NavItem {
   label: string;
@@ -11,7 +12,7 @@ interface NavItem {
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user } = useUserInfo();
+  const { user, isAuthenticated } = useUserInfo();
   const navItems: NavItem[] = [
     { label: "Leads", path: "/leads" },
     { label: "About", path: "/about" },
@@ -135,9 +136,11 @@ const Header: React.FC = () => {
               <Link
                 to="/login"
                 className="block text-primary-orange px-3 py-2 rounded-md text-body-bold hover:bg-gray-50"
-                onClick={toggleMobileMenu}
+                onClick={() => {
+                  clearAuthSession();
+                }}
               >
-                Log in
+                {isAuthenticated ? "Log Out" : "Log in"}
               </Link>
             </div>
           </div>

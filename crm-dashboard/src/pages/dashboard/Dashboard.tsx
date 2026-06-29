@@ -7,12 +7,12 @@ import SearchBar from "@/components/SearchBar";
 import Button from "@/components/Button";
 import { ModalParent } from "@/components/ModalParent";
 import FormLead from "../FormLead";
-import { LeadStatus, LeadPriority, LeadRow } from "@/types/lead";
+import { LeadStatus, LeadPriority, DisplayLead } from "@/types/lead";
 import { useLeads } from "@/hooks/useLeads";
 
 // ─── status / priority maps (unchanged from original) ────────────────────────
 
-const statusStyles: Record<LeadStatus, string> = {
+const statusStyles: Record<string, string> = {
   New: "bg-secondary-purple-100 text-secondary-purple border-secondary-purple-200",
   Contacted:
     "bg-secondary-blue-100 text-secondary-blue-300 border-secondary-blue-200/30",
@@ -25,9 +25,9 @@ const statusStyles: Record<LeadStatus, string> = {
 };
 
 const priorityStyles: Record<LeadPriority, string> = {
-  High: "bg-primary-red",
-  Medium: "bg-primary-orange",
-  Low: "bg-secondary-green-500",
+  high: "bg-primary-red",
+  medium: "bg-primary-orange",
+  low: "bg-secondary-green-500",
 };
 
 const filterOptions = [
@@ -42,7 +42,7 @@ type FilterOption = (typeof filterOptions)[number];
 
 // ─── seed data ────────────────────────────────────────────────────────────────
 
-const seedLeads: LeadRow[] = [
+const seedLeads: DisplayLead[] = [
   {
     id: "LD-1048",
     name: "Riya Sharma",
@@ -71,6 +71,7 @@ const seedLeads: LeadRow[] = [
         time: "Yesterday, 4:15 PM",
       },
     ],
+    email: "riyas@gmail.com",
   },
   {
     id: "LD-1047",
@@ -96,6 +97,7 @@ const seedLeads: LeadRow[] = [
       { icon: "📍", text: "Site visit completed", time: "Yesterday, 2:00 PM" },
       { icon: "🚶", text: "Walk-in registered", time: "Jun 24, 2024" },
     ],
+    email: "karthik@gmail.com",
   },
   {
     id: "LD-1046",
@@ -128,48 +130,7 @@ const seedLeads: LeadRow[] = [
       { icon: "✅", text: "Qualification call done", time: "Jun 25, 2024" },
       { icon: "👥", text: "Referral source confirmed", time: "Jun 24, 2024" },
     ],
-  },
-  {
-    id: "LD-1045",
-    name: "Vikram Iyer",
-    contact: "+91 99860 22441",
-    project: "Confident Bellatrix",
-    source: "Facebook",
-    status: "Contacted",
-    priority: "Low",
-    budget: "₹48L",
-    owner: "Sara",
-    lastActivity: "Jun 24",
-    notes: [],
-    activities: [
-      { icon: "📘", text: "Facebook lead captured", time: "Jun 24, 2024" },
-      { icon: "📞", text: "Intro call made", time: "Jun 24, 2024" },
-    ],
-  },
-  {
-    id: "LD-1044",
-    name: "Nisha Kapoor",
-    contact: "+91 97420 33491",
-    project: "Confident Park",
-    source: "Housing Portal",
-    status: "Negotiation",
-    priority: "Medium",
-    budget: "₹95L",
-    owner: "Aarav",
-    lastActivity: "Jun 22",
-    notes: [
-      {
-        id: 1,
-        text: "Wants 5% discount. Counter-proposal sent.",
-        author: "Aarav",
-        time: "Jun 22, 2024",
-        done: false,
-      },
-    ],
-    activities: [
-      { icon: "📄", text: "Proposal sent", time: "Jun 22, 2024" },
-      { icon: "↩️", text: "Counter-offer received", time: "Jun 21, 2024" },
-    ],
+    email: "ananya@gmail.com",
   },
 ];
 
@@ -201,7 +162,7 @@ function PriorityDot({ priority }: { priority: LeadPriority }) {
 
 function Dashboard() {
   const [activeFilter, setActiveFilter] = useState<FilterOption>("All");
-  const [selectedLead, setSelectedLead] = useState<LeadRow | null>(null);
+  const [selectedLead, setSelectedLead] = useState<DisplayLead | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [modalParent, setModalParent] = useState<boolean>(false);
   const { leads, isLoading, isError } = useLeads();
@@ -212,37 +173,39 @@ function Dashboard() {
     let leadsData =
       activeFilter === "All"
         ? baseLeads
-        : baseLeads.filter((lead: LeadRow) => lead.status === activeFilter);
+        : baseLeads.filter((lead: DisplayLead) => lead.status === activeFilter);
 
     if (searchQuery) {
-      leadsData = leadsData.filter((lead: LeadRow) =>
+      leadsData = leadsData.filter((lead: DisplayLead) =>
         lead.name?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
     return leadsData;
   }, [activeFilter, searchQuery, leads]);
 
-  // Adapter: map LeadRow → shape expected by LeadDetails
+  // Adapter: map DisplayLead → shape expected by LeadDetails
   const detailsLead = useMemo(() => {
     if (!selectedLead) return null;
 
     return {
       id: selectedLead.id,
-      name: selectedLead.name,
+      first_name: selectedLead.name.split(" ")[0],
+      last_name: selectedLead.name.split(" ")[1],
       phone: selectedLead.contact,
       project: selectedLead.project,
       source: selectedLead.source,
       status: selectedLead.status.toLowerCase().replace(" ", "-") as string,
       priority: selectedLead.priority.toLowerCase() as string,
       owner: selectedLead.owner,
-      budget: selectedLead.budget,
+      budget: Number(selectedLead.budget) || 0,
       lastActivity: selectedLead.lastActivity,
       notes: selectedLead.notes,
       activities: selectedLead.activities,
+      email: selectedLead.email,
     };
   }, [selectedLead]);
 
-  const columns: TableColumn<LeadRow>[] = [
+  const columns: TableColumn<DisplayLead>[] = [
     {
       key: "name",
       header: "Lead",
@@ -354,18 +317,30 @@ function Dashboard() {
             Confident Group CRM
           </h1>
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
-          <div className="rounded-md border border-neutral-lightBorder bg-white px-4 py-2">
-            <p className="text-xs text-neutral-textGrey">Open Leads</p>
-            <p className="text-lg font-bold text-primary-navy">128</p>
+        <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
+          <div className="group rounded-lg border border-neutral-lightBorder bg-white px-5 py-4 shadow-sm hover:shadow-md hover:border-primary-navy/20 hover:bg-secondary-blue-50 transition-all duration-200 cursor-default">
+            <p className="text-xs font-medium uppercase tracking-wide text-neutral-textGrey mb-1">
+              Open Leads
+            </p>
+            <p className="text-2xl font-bold text-primary-navy group-hover:scale-105 transition-transform duration-200">
+              128
+            </p>
           </div>
-          <div className="rounded-md border border-neutral-lightBorder bg-white px-4 py-2">
-            <p className="text-xs text-neutral-textGrey">Visits</p>
-            <p className="text-lg font-bold text-secondary-green-300">34</p>
+          <div className="group rounded-lg border border-neutral-lightBorder bg-white px-5 py-4 shadow-sm hover:shadow-md hover:border-secondary-green-300/30 hover:bg-secondary-green-50 transition-all duration-200 cursor-default">
+            <p className="text-xs font-medium uppercase tracking-wide text-neutral-textGrey mb-1">
+              Visits
+            </p>
+            <p className="text-2xl font-bold text-secondary-green-300 group-hover:scale-105 transition-transform duration-200">
+              34
+            </p>
           </div>
-          <div className="rounded-md border border-neutral-lightBorder bg-white px-4 py-2">
-            <p className="text-xs text-neutral-textGrey">Hot</p>
-            <p className="text-lg font-bold text-primary-red">18</p>
+          <div className="group rounded-lg border border-neutral-lightBorder bg-white px-5 py-4 shadow-sm hover:shadow-md hover:border-primary-red/30 hover:bg-secondary-red-50 transition-all duration-200 cursor-default">
+            <p className="text-xs font-medium uppercase tracking-wide text-neutral-textGrey mb-1">
+              Hot
+            </p>
+            <p className="text-2xl font-bold text-primary-red group-hover:scale-105 transition-transform duration-200">
+              18
+            </p>
           </div>
         </div>
       </div>
@@ -409,8 +384,9 @@ function Dashboard() {
             const count =
               filter === "All"
                 ? baseLeads.length
-                : baseLeads.filter((lead: LeadRow) => lead.status === filter)
-                    .length;
+                : baseLeads.filter(
+                    (lead: DisplayLead) => lead.status === filter,
+                  ).length;
             const isActive = activeFilter === filter;
             return (
               <button

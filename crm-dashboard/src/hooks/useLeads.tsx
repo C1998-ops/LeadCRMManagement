@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutationFetch } from "./useMutationFetch";
 import { __fetch } from "@/components/FetchApi";
 import { transformedLeads } from "@/utils/transformer";
-import { LeadRow, CreateLeadInput, UpdateLeadInput } from "@/types/lead";
+import { CreateLeadInput, UpdateLeadInput } from "@/types/lead";
 
 export const LEADS_KEY = ["leads"] as const;
 
@@ -22,7 +22,7 @@ export const useLeads = () => {
         reqMethodType: "GET",
       });
       if (!res.ok) throw new Error("Failed to fetch leads");
-      return transformedLeads(res.resData?.data) as LeadRow[];
+      return transformedLeads(res.resData?.data);
     },
   });
 

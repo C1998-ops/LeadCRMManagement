@@ -4,21 +4,9 @@ import * as Yup from "yup";
 import Button from "@/components/Button";
 import { FormInput } from "@/components/CustomFormInput";
 import { useLeads } from "@/hooks/useLeads";
+import { LeadInput } from "@/types/lead";
 
-interface LeadFormValues {
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  company: string;
-  source: string;
-  status: string;
-  priority: string;
-  estimated_value: number;
-  notes: string;
-  customer_id: string;
-  assigned_to: string;
-}
+export type LeadFormValues = LeadInput;
 const LeadFormSchema = Yup.object().shape({
   first_name: Yup.string().required("First name is required"),
   last_name: Yup.string().required("Last name is required"),
@@ -58,23 +46,29 @@ const sourceOptions: Array<{ label: string; value: string }> = [
   { label: "Email Campaign", value: "email_campaign" },
   { label: "Other", value: "other" },
 ];
-const FormLead: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
+const FormLead: React.FC<{
+  onCancel: () => void;
+  lead?: LeadFormValues;
+  leadId?: string;
+}> = ({ onCancel, lead, leadId }) => {
+  const isEditMode = !!leadId;
   const initialValues: LeadFormValues = {
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-    company: "",
-    source: "",
-    status: "",
-    priority: "",
-    estimated_value: 0,
-    notes: "",
-    customer_id: "",
-    assigned_to: "",
+    first_name: lead?.first_name || "",
+    last_name: lead?.last_name || "",
+    email: lead?.email || "",
+    phone: lead?.phone || "",
+    company: lead?.company || "",
+    source: lead?.source || "",
+    status: lead?.status || "",
+    priority: lead?.priority || "",
+    estimated_value: lead?.estimated_value || 0,
+    notes: lead?.notes || "",
+    customer_id: lead?.customer_id || "",
+    assigned_to: lead?.assigned_to || "",
   };
   const [loading, setLoading] = useState<boolean>(false);
-  const { createLead } = useLeads();
+  const { createLead, updateLead } = useLeads();
+
   const handleSubmit = async (
     values: LeadFormValues,
     helpers: FormikHelpers<LeadFormValues>,
@@ -82,8 +76,13 @@ const FormLead: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
     try {
       setLoading(true);
       // Transform form values to match backend expected format
-      const response = await createLead(values);
-      console.log("Lead created:", response);
+      if (isEditMode) {
+        const response = await updateLead(leadId, values);
+        console.log("response updated !", response.resData);
+      } else {
+        const response = await createLead(values);
+        console.log("Lead created:", response);
+      }
       helpers.resetForm();
       onCancel(); // Close modal after successful creation
     } catch (error) {
@@ -96,7 +95,7 @@ const FormLead: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
     <div className="w-full flex flex-col max-h-[90vh] p-4 md:p-6 custom-scrollbar">
       <div className="mb-4 sm:mb-6 flex-shrink-0">
         <h2 className="text-xl sm:text-2xl font-bold text-primary-navy">
-          Add New Lead
+          {isEditMode ? "Edit Lead" : "Add New Lead"}
         </h2>
         <p className="text-xs sm:text-sm text-neutral-textGrey">
           Fill in the details to create a new lead
@@ -106,6 +105,7 @@ const FormLead: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
         initialValues={initialValues}
         validationSchema={LeadFormSchema}
         onSubmit={handleSubmit}
+        enableReinitialize
       >
         {({ errors, touched, isSubmitting, handleChange, values }) => (
           <Form className="space-y-3 sm:space-y-4 overflow-y-auto flex-1 pr-2">
@@ -248,24 +248,6 @@ const FormLead: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
                 onChange={handleChange}
                 value={values.estimated_value}
               />
-              <FormInput
-                label="Customer ID"
-                name="customer_id"
-                type="text"
-                placeholder="Optional customer ID"
-                formErrors={touched.customer_id && errors.customer_id}
-                onChange={handleChange}
-                value={values.customer_id}
-              />
-              <FormInput
-                label="Assigned To"
-                name="assigned_to"
-                type="text"
-                placeholder="Assign to user ID"
-                formErrors={touched.assigned_to && errors.assigned_to}
-                onChange={handleChange}
-                value={values.assigned_to}
-              />
             </div>
             <div>
               <label
@@ -301,7 +283,13 @@ const FormLead: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
                 variant="secondary"
                 className="text-xs sm:text-sm"
               >
-                {isSubmitting || loading ? "Creating..." : "Create Lead"}
+                {isSubmitting || loading
+                  ? isEditMode
+                    ? "Updating..."
+                    : "Creating..."
+                  : isEditMode
+                    ? "Update Lead"
+                    : "Create Lead"}
               </Button>
             </div>
           </Form>

@@ -9,12 +9,14 @@ const authRoutes = require("./routes/auth");
 const leadsRoutes = require("./routes/leads");
 const customersRoutes = require("./routes/customers");
 const { errorHandler } = require("./middleware/errorHandler");
-
+// swagger
+const swaggerUi = require("swagger-ui-express");
+const merged = require("./swagger");
 // Run migrations on startup
 require("./db/migrate");
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
 // ── Global middleware ──────────────────────────────────────────────────────
 app.use(
@@ -41,14 +43,15 @@ app.use(
 );
 
 // ── Routes ─────────────────────────────────────────────────────────────────
-app.get("/health", (req, res) =>
+app.get("/api/health", (req, res) =>
   res.json({ status: "ok", timestamp: new Date() }),
 );
 
 app.use("/api/auth", authRoutes);
 app.use("/api/leads", leadsRoutes);
 app.use("/api/customers", customersRoutes);
-
+//swagger configuration and setup
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(merged));
 // 404
 app.use((req, res) =>
   res.status(404).json({ success: false, message: "Route not found" }),
@@ -56,7 +59,6 @@ app.use((req, res) =>
 
 // Error handler (must be last)
 app.use(errorHandler);
-
 app.listen(PORT, () => {
   console.log(
     `\n🚀 Confident Group CRM API running on http://localhost:${PORT}`,

@@ -1,12 +1,7 @@
 // src/routes/auth.js
 const router = require("express").Router();
 const { body } = require("express-validator");
-const {
-  register,
-  login,
-  me,
-  changePassword,
-} = require("../controllers/authController");
+const authController = require("../controllers/authController");
 const { authenticate } = require("../middleware/auth");
 const { validate } = require("../middleware/errorHandler");
 
@@ -25,9 +20,28 @@ router.post(
       .withMessage("Invalid role"),
     validate,
   ],
-  register,
+  authController.register,
 );
-
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: User login
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ */
 router.post(
   "/login",
   [
@@ -38,10 +52,10 @@ router.post(
     body("password").notEmpty().withMessage("Password required"),
     validate,
   ],
-  login,
+  authController.login,
 );
 
-router.get("/me", authenticate, me);
+router.get("/me", authenticate, authController.me);
 
 router.post(
   "/change-password",
@@ -53,7 +67,6 @@ router.post(
       .withMessage("New password min 6 chars"),
     validate,
   ],
-  changePassword,
+  authController.changePassword,
 );
-
 module.exports = router;

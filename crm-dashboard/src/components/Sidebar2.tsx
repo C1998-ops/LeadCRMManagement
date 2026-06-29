@@ -21,6 +21,7 @@ interface SidebarProps {
   onOpen: () => void;
   onToggleCollapse: () => void;
   isMobile: boolean;
+  isTablet: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -35,6 +36,7 @@ const SidebarFreeUser: React.FC<SidebarProps> = ({
   onClose,
   onToggleCollapse,
   isMobile,
+  isTablet,
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{
@@ -45,9 +47,9 @@ const SidebarFreeUser: React.FC<SidebarProps> = ({
   const navigate = useNavigate();
   const sidebarRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click (mobile)
+  // Close on outside click (mobile/tablet)
   useEffect(() => {
-    if (!isMobile || !isOpen) return;
+    if ((!isMobile && !isTablet) || !isOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
       if (
         sidebarRef.current &&
@@ -58,20 +60,20 @@ const SidebarFreeUser: React.FC<SidebarProps> = ({
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMobile, isOpen, onClose]);
+  }, [isMobile, isTablet, isOpen, onClose]);
 
   const handleLogout = () => {
     clearAuthSession();
     navigate("/login", { replace: true });
   };
 
-  // Sidebar is "expanded" when open and not collapsed (desktop), or open on mobile
-  const expanded = isMobile ? isOpen : isOpen && !isCollapsed;
+  // Sidebar is "expanded" when open and not collapsed (desktop), or open on mobile/tablet
+  const expanded = (isMobile || isTablet) ? isOpen : isOpen && !isCollapsed;
 
   // Sidebar translate / width
   const sidebarClasses = [
     "fixed left-0 top-0 h-screen bg-primary-navy shadow-lg z-40 flex flex-col transition-all duration-300",
-    isMobile
+    isMobile || isTablet
       ? isOpen
         ? "w-60 translate-x-0"
         : "w-60 -translate-x-full"
@@ -109,7 +111,7 @@ const SidebarFreeUser: React.FC<SidebarProps> = ({
               <li key={item.path} className="relative w-full">
                 <Link
                   to={item.path}
-                  onClick={() => isMobile && onClose()}
+                  onClick={() => (isMobile || isTablet) && onClose()}
                   className={[
                     "flex items-center gap-2.5 py-2.5 rounded-full transition-all duration-200 text-sm",
                     expanded ? "px-4" : "px-2 justify-center",
@@ -159,6 +161,7 @@ const SidebarFreeUser: React.FC<SidebarProps> = ({
                 {/* Tooltip for collapsed mode */}
                 {!expanded &&
                   !isMobile &&
+                  !isTablet &&
                   hoveredItem === tooltipLabel &&
                   tooltipPosition && (
                     <div
@@ -182,7 +185,7 @@ const SidebarFreeUser: React.FC<SidebarProps> = ({
       {/* Bottom section */}
       <div className="flex-shrink-0 border-t border-white/10 px-2 py-3 flex flex-col gap-2">
         {/* Collapse toggle (desktop only) */}
-        {!isMobile && (
+        {!isMobile && !isTablet && (
           <button
             className="w-full flex items-center justify-center gap-2 py-1.5 px-2 rounded-lg border border-white/10 text-white/50 hover:bg-white/10 hover:text-white transition-all text-xs"
             onClick={onToggleCollapse}

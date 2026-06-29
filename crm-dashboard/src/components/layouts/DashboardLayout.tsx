@@ -10,6 +10,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const { isAuthenticated } = useUserInfo();
 
   const location = useLocation();
@@ -17,14 +18,16 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
-      const tablet = window.innerWidth < 1024;
+      const tablet = window.innerWidth >= 768 && window.innerWidth < 1024;
       setIsMobile(mobile);
+      setIsTablet(tablet);
+
       if (mobile) {
         setIsSidebarOpen(false);
         setIsSidebarCollapsed(false);
       } else if (tablet) {
-        setIsSidebarOpen(true);
-        setIsSidebarCollapsed(true);
+        setIsSidebarOpen(false);
+        setIsSidebarCollapsed(false);
       } else {
         setIsSidebarOpen(true);
         setIsSidebarCollapsed(false);
@@ -38,18 +41,18 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     document.body.style.overflow =
-      isMobile && isSidebarOpen ? "hidden" : "auto";
+      (isMobile || isTablet) && isSidebarOpen ? "hidden" : "auto";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isMobile, isSidebarOpen]);
+  }, [isMobile, isTablet, isSidebarOpen]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [location.pathname]);
 
-  // Sidebar width: open=220px, collapsed=64px, mobile hidden
-  const mainMargin = isMobile
+  // Sidebar width: open=220px, collapsed=64px, mobile/tablet hidden
+  const mainMargin = isMobile || isTablet
     ? "ml-0"
     : isSidebarCollapsed
       ? "lg:ml-16"
@@ -61,8 +64,8 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <div className="min-h-screen bg-neutral-light overflow-x-hidden">
-      {/* Mobile overlay */}
-      {isMobile && isSidebarOpen && (
+      {/* Mobile/tablet overlay */}
+      {(isMobile || isTablet) && isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-35 transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
@@ -74,9 +77,10 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({
         isOpen={isSidebarOpen}
         isCollapsed={isSidebarCollapsed}
         onClose={() => setIsSidebarOpen(false)}
-        onOpen={() => setIsSidebarOpen(true)}
+        onOpen={() => setIsSidebarOpen(!isSidebarOpen)}
         onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         isMobile={isMobile}
+        isTablet={isTablet}
       />
 
       <div

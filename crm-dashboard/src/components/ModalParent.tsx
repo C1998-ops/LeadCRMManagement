@@ -1,4 +1,5 @@
 import React, { forwardRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Button from "./Button";
 import { FaTimes } from "react-icons/fa";
 
@@ -42,7 +43,7 @@ export const ModalParent = forwardRef<HTMLDivElement, ModalParentProps>(
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
       <div
         className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-40 overflow-hidden m-0 w-full"
         ref={ref}
@@ -80,7 +81,8 @@ export const ModalParent = forwardRef<HTMLDivElement, ModalParentProps>(
           </div>
           <div className={`${noPadding ? "" : "p-2"}`}>{children}</div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   },
 );
